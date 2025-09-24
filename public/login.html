@@ -1,7 +1,31 @@
-<!doctype html><meta charset="utf-8">
-<h1>Portal</h1>
-<a style="padding:.6rem 1rem;border:1px solid #333;border-radius:.5rem;text-decoration:none"
-   href="https://vlverappd00574.pemex.pmx.com/strapi/api/connect/microsoft?redirect=https%3A%2F%2Fvlverappd00574.pemex.pmx.com%2Fstrapi%2Fsso-complete.html%3Fnext%3D%252F">
-  Entrar con Microsoft
-</a>
-~        
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Portal Strapi - Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 2rem; text-align: center; }
+        .login-button { 
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: #0078d4;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 1rem;
+            font-weight: 500;
+        }
+        .login-button:hover { background: #106ebe; }
+    </style>
+</head>
+<body>
+    <h1>Portal Strapi - SIIC</h1>
+    <p>Acceso al panel de administración</p>
+    <a class="login-button" href="/strapi/api/admin-azure-sso/azure/login">
+        🔐 Entrar con Microsoft Azure AD
+    </a>
+    <br><br>
+    <p><small>Solo usuarios autorizados del dominio pemex.com</small></p>
+</body>
+</html>

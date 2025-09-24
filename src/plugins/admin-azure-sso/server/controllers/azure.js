@@ -74,7 +74,7 @@ module.exports = {
     if (!email) ctx.throw(400, 'Missing email in id_token');
 
     // filtro dominio
-    const allowed = (process.env.AZURE_ALLOWED_DOMAIN || '')
+    const allowed = (process.env.AZURE_ALLOWED_DOMAINS || '')
       .toLowerCase()
       .split(',')
       .map((s) => s.trim())
@@ -112,9 +112,9 @@ module.exports = {
       .service('token')
       .issueAdminJwt(adminUser);
 
-    // Redirige a /azure/complete con ?token=...
+    // Redirige a /api/admin-azure-sso/azure/complete con ?token=...
     const final = (stash.finalRedirect && decodeURIComponent(stash.finalRedirect)) || `${process.env.PUBLIC_URL}/admin`;
-    const completeUrl = `${process.env.PUBLIC_URL}/azure/complete?token=${encodeURIComponent(token)}&next=${encodeURIComponent(final)}`;
+    const completeUrl = `${process.env.PUBLIC_URL}/api/admin-azure-sso/azure/complete?token=${encodeURIComponent(token)}&next=${encodeURIComponent(final)}`;
 
     // limpia state
     stateStore.delete(state);

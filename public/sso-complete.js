@@ -1,47 +1,35 @@
 (function () {
   try {
-    // Une parámetros de query (?a=b) y fragment (#a=b)
     const q = new URLSearchParams(window.location.search);
-    const h = new URLSearchParams(
-      window.location.hash && window.location.hash.startsWith("#")
-        ? window.location.hash.slice(1)
-        : window.location.hash || ""
-    );
+    
+    // Obtener parámetros del plugin de Azure SSO
+    const token = q.get("token");
+    const next = q.get("next") || "/strapi/admin";
+    const error = q.get("error");
 
-    // Helper para obtener un campo por varios alias
-    const get = (k) => q.get(k) || h.get(k) || q.get(k.toLowerCase()) || h.get(k.toLowerCase());
-
-    // Token puede venir como access_token, jwt, token o id_token
-    const token = get("access_token") || get("jwt") || get("token") || get("id_token");
-    const err =
-      get("error") ||
-      get("error_description") ||
-      get("error[error]") ||
-      get("error[error_description]");
-
-    if (err) {
-      document.body.textContent = "Error de SSO: " + err;
+    if (error) {
+      document.body.textContent = "Error de SSO: " + error;
       return;
     }
 
     if (!token) {
-      document.body.textContent = "No llegó access_token (¿iniciaste con ?redirect=...?).";
+      document.body.textContent = "No se recibió el token de autenticación.";
       return;
     }
 
-    // Guarda token para tu app
-    localStorage.setItem("strapi_jwt", token);
-    document.cookie = "strapi_jwt=" + token + "; Path=/; Secure; SameSite=None";
+    // Guarda el token JWT para Strapi Admin
+    localStorage.setItem("jwtToken", token);
+    // Limpia tokens antiguos
+    localStorage.removeItem("strapi_jwt");
 
-    // Redirige adonde quieras (se puede pasar ?next=/ruta en query o hash)
-    const next = get("next") || "/";
-    const url = new URL(next, window.location.origin);
+    document.body.textContent = "Redirigiendo al panel de administración...";
 
-    // Limpia la URL (quita query y hash) y navega
-    window.history.replaceState({}, "", url.toString());
-    window.location.assign(url.toString());
+    // Redirige al admin de Strapi
+    setTimeout(() => {
+      window.location.replace(next);
+    }, 1000);
   } catch (e) {
     console.error(e);
-    document.body.textContent = "Error procesando el inicio de sesión.";
+    document.body.textContent = "Error procesando el inicio de sesión: " + e.message;
   }
 })();
