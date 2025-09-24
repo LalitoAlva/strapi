@@ -1,0 +1,91 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: strapi-postgres
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - strapi_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  strapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PUBLIC_URL: ${PUBLIC_URL}
+        ADMIN_PATH: /strapi/admin
+        STRAPI_ADMIN_BACKEND_URL: ${STRAPI_ADMIN_BACKEND_URL}
+    container_name: strapi-siic
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      HOST: ${HOST}
+      PORT: ${PORT}
+      PUBLIC_URL: ${PUBLIC_URL}
+      ADMIN_PATH:  /strapi/admin
+      STRAPI_ADMIN_BACKEND_URL: ${STRAPI_ADMIN_BACKEND_URL}
+      DATABASE_CLIENT: ${DATABASE_CLIENT}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_SSL: ${DATABASE_SSL}
+      APP_KEYS: ${APP_KEYS}
+      API_TOKEN_SALT: ${API_TOKEN_SALT}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT}
+      JWT_SECRET: ${JWT_SECRET}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+      AZURE_SCOPE: ${AZURE_SCOPE}
+      AZURE_PROMPT: ${AZURE_PROMPT}
+      XDG_CONFIG_HOME: /tmp
+    ports:
+      - "1338:1337"    # Nginx apunta al 1338 del host
+    volumes:
+      - strapi_uploads:/opt/app/public/uploads
+      - strapi_logs:/opt/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - strapi_network
+
+  adminer:
+    image: adminer:latest
+    container_name: strapi-adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      - postgres
+    networks:
+      - strapi_network
+
+# ⬇⬇⬇ OJO: "volumes:" top-level debe ser un mapping (clave: {}) no una lista
+volumes:
+  postgres_data: {}
+  strapi_uploads: {}
+  strapi_logs: {}
+
+networks:
+  strapi_network:
+    driver: bridge
