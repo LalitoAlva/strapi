@@ -56,21 +56,7 @@ RUN groupadd -r strapi && useradd -r -g strapi strapi
 COPY package.json ./
 
 # Verificar integridad del package.json
-RUN node -e "
-  const pkg = require('./package.json');
-  console.log('Package name:', pkg.name);
-  console.log('Dependencies count:', Object.keys(pkg.dependencies || {}).length);
-  
-  // Verificar que no hay dependencias sospechosas
-  const suspiciousPkgs = ['event-stream', 'flatmap-stream', 'ps-tree'];
-  const deps = Object.keys(pkg.dependencies || {});
-  const found = deps.filter(d => suspiciousPkgs.includes(d));
-  if (found.length > 0) {
-    console.error('SECURITY WARNING: Found suspicious packages:', found);
-    process.exit(1);
-  }
-  console.log('Package.json security check: PASSED');
-"
+RUN node -e "const pkg = require('./package.json'); console.log('Package name:', pkg.name); console.log('Dependencies count:', Object.keys(pkg.dependencies || {}).length); const suspiciousPkgs = ['event-stream', 'flatmap-stream', 'ps-tree']; const deps = Object.keys(pkg.dependencies || {}); const found = deps.filter(d => suspiciousPkgs.includes(d)); if (found.length > 0) { console.error('SECURITY WARNING: Found suspicious packages:', found); process.exit(1); } console.log('Package.json security check: PASSED');"
 
 # Instalación con medidas de seguridad adicionales
 RUN npm ci --only=production --no-audit --no-fund --ignore-scripts 2>&1 | tee npm-install.log \
@@ -79,20 +65,7 @@ RUN npm ci --only=production --no-audit --no-fund --ignore-scripts 2>&1 | tee np
   && rm npm-install.log
 
 # Verificar integridad de node_modules críticos
-RUN node -e "
-  const criticalPkgs = ['jsonwebtoken', 'openid-client', '@strapi/strapi'];
-  criticalPkgs.forEach(pkg => {
-    try {
-      const pkgPath = require.resolve(pkg + '/package.json');
-      const pkgInfo = require(pkgPath);
-      console.log(pkg + '@' + pkgInfo.version + ' - OK');
-    } catch(e) {
-      console.error('MISSING CRITICAL PACKAGE:', pkg);
-      process.exit(1);
-    }
-  });
-  console.log('Critical packages integrity: PASSED');
-"
+RUN node -e "const criticalPkgs = ['jsonwebtoken', 'openid-client', '@strapi/strapi']; criticalPkgs.forEach(pkg => { try { const pkgPath = require.resolve(pkg + '/package.json'); const pkgInfo = require(pkgPath); console.log(pkg + '@' + pkgInfo.version + ' - OK'); } catch(e) { console.error('MISSING CRITICAL PACKAGE:', pkg); process.exit(1); } }); console.log('Critical packages integrity: PASSED');"
 
 # Copiar código fuente
 COPY . .
@@ -180,35 +153,7 @@ RUN mkdir -p public/uploads logs tmp .cache \
 USER strapi
 
 # Verificación final de seguridad
-RUN node -e "
-  console.log('Runtime security check...');
-  console.log('User ID:', process.getuid());
-  console.log('Node version:', process.version);
-  console.log('Working directory:', process.cwd());
-  
-  // Verificar que estamos corriendo como no-root
-  if (process.getuid() === 0) {
-    console.error('SECURITY ERROR: Running as root');
-    process.exit(1);
-  }
-  
-  // Verificar que los archivos críticos existen
-  const fs = require('fs');
-  const criticalFiles = [
-    'package.json',
-    'src/plugins/admin-azure-sso/server/index.js',
-    'build/index.html'
-  ];
-  
-  criticalFiles.forEach(file => {
-    if (!fs.existsSync(file)) {
-      console.error('MISSING CRITICAL FILE:', file);
-      process.exit(1);
-    }
-  });
-  
-  console.log('Runtime security check: PASSED');
-"
+RUN node -e "console.log('Runtime security check...'); console.log('User ID:', process.getuid()); console.log('Node version:', process.version); console.log('Working directory:', process.cwd()); if (process.getuid() === 0) { console.error('SECURITY ERROR: Running as root'); process.exit(1); } const fs = require('fs'); const criticalFiles = ['package.json', 'src/plugins/admin-azure-sso/server/index.js', 'build/index.html']; criticalFiles.forEach(file => { if (!fs.existsSync(file)) { console.error('MISSING CRITICAL FILE:', file); process.exit(1); } }); console.log('Runtime security check: PASSED');"
 
 EXPOSE 1337
 
