@@ -1,11 +1,13 @@
 {
   "name": "admin-azure-sso",
   "version": "1.0.0",
+  "description": "Azure AD SSO plugin for Strapi Admin",
   "strapi": {
     "name": "admin-azure-sso",
-    "type": "plugin"
+    "displayName": "Azure AD SSO",
+    "description": "Single Sign-On with Azure Active Directory",
+    "kind": "plugin"
   },
-  "main": "server/bootstrap.js",
   "dependencies": {
     "openid-client": "5.6.5",
     "jsonwebtoken": "9.0.2"
