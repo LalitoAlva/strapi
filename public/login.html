@@ -22,10 +22,18 @@
 <body>
     <h1>Portal Strapi - SIIC</h1>
     <p>Acceso al panel de administración</p>
-    <a class="login-button" href="/strapi/api/admin-azure-sso/azure/login">
+    <a class="login-button" href="/api/admin-azure-sso/azure/login">
         🔐 Entrar con Microsoft Azure AD
     </a>
     <br><br>
     <p><small>Solo usuarios autorizados del dominio pemex.com</small></p>
+    <script>
+        // Redirigir automáticamente si ya hay un token
+        if (localStorage.getItem('jwtToken')) {
+            const publicUrl = window.location.origin + '/strapi';
+            const adminPath = '/admin';
+            window.location.href = publicUrl + adminPath;
+        }
+    </script>
 </body>
 </html>

@@ -84,37 +84,52 @@ module.exports = {
     }
 
     // Busca admin::user por email
-    const existing = await strapi.db.query('admin::user').findOne({ where: { email } });
+    const existing = await strapi.db.query('admin::user').findOne({ 
+      where: { email },
+      populate: ['roles']
+    });
 
     let adminUser = existing;
     if (!adminUser) {
-      // (opcional) AUTOPROVISIONAR
+      // AUTOPROVISIONAR nuevo usuario
       // Busca rol super admin
-      const superRole = await strapi.db.query('admin::role').findOne({ where: { code: 'strapi-super-admin' }});
-      if (!superRole) ctx.throw(500, 'No admin role found');
+      const superRole = await strapi.db.query('admin::role').findOne({ 
+        where: { code: 'strapi-super-admin' }
+      });
+      if (!superRole) {
+        ctx.throw(500, 'No se encontró el rol de super admin');
+      }
+
+      // Crear usuario con contraseña hasheada (requerido por Strapi)
+      const crypto = require('crypto');
+      const bcrypt = require('bcryptjs');
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
       adminUser = await strapi.db.query('admin::user').create({
         data: {
           email,
           firstname: id.given_name || 'Azure',
           lastname: id.family_name || 'User',
-          username: email,
+          username: email.split('@')[0],
           isActive: true,
           roles: [superRole.id],
-          password: require('crypto').randomBytes(16).toString('hex'), // no se usa
+          password: hashedPassword,
         },
+        populate: ['roles'],
       });
+    } else if (!adminUser.isActive) {
+      ctx.throw(403, 'Usuario inactivo');
     }
 
-    // Emite JWT de admin
-    const token = await strapi
-      .plugin('admin-azure-sso')
-      .service('token')
-      .issueAdminJwt(adminUser);
+    // Emite JWT de admin usando el servicio de admin de Strapi
+    const token = strapi.plugins.admin.services.token.createJwtToken(adminUser);
 
-    // Redirige a /api/admin-azure-sso/azure/complete con ?token=...
-    const final = (stash.finalRedirect && decodeURIComponent(stash.finalRedirect)) || `${process.env.PUBLIC_URL}/admin`;
-    const completeUrl = `${process.env.PUBLIC_URL}/api/admin-azure-sso/azure/complete?token=${encodeURIComponent(token)}&next=${encodeURIComponent(final)}`;
+    // Determina la URL final de redirección
+    const adminPath = process.env.ADMIN_PATH || '/admin';
+    const publicUrl = process.env.PUBLIC_URL || '';
+    const final = (stash.finalRedirect && decodeURIComponent(stash.finalRedirect)) || `${publicUrl}${adminPath}`;
+    const completeUrl = `${publicUrl}/api/admin-azure-sso/azure/complete?token=${encodeURIComponent(token)}&next=${encodeURIComponent(final)}`;
 
     // limpia state
     stateStore.delete(state);
@@ -126,25 +141,62 @@ module.exports = {
   // página que pega el token en localStorage y salta al admin
   async complete(ctx) {
     const token = ctx.query.token;
-    const next = ctx.query.next || `${process.env.PUBLIC_URL}/admin`;
+    const adminPath = process.env.ADMIN_PATH || '/admin';
+    const publicUrl = process.env.PUBLIC_URL || '';
+    const next = ctx.query.next || `${publicUrl}${adminPath}`;
+
+    if (!token) {
+      ctx.throw(400, 'Token no proporcionado');
+    }
 
     ctx.set('Content-Type', 'text/html; charset=utf-8');
     ctx.body = `<!doctype html>
-<html><meta charset="utf-8">
-<title>Signing in…</title>
-<body>Iniciando sesión en Strapi…</body>
-<script>
-try {
-  // **Clave que usa el Admin v4 para su JWT**
-  localStorage.setItem('jwtToken', ${JSON.stringify(token)});
-  // por compatibilidad, limpia otros
-  localStorage.removeItem('strapi_jwt');
-  // hacia el panel
-  location.replace(${JSON.stringify(next)});
-} catch (e) {
-  document.body.textContent = 'No se pudo guardar el token en localStorage: ' + e;
-}
-</script>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Iniciando sesión...</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: #f6f6f9;
+    }
+    .message {
+      text-align: center;
+      padding: 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="message">
+    <h2>Iniciando sesión en Strapi...</h2>
+    <p>Por favor espera...</p>
+  </div>
+  <script>
+    (function() {
+      try {
+        // Clave que usa Strapi Admin v4 para el JWT
+        localStorage.setItem('jwtToken', ${JSON.stringify(token)});
+        // Limpiar otros tokens antiguos
+        localStorage.removeItem('strapi_jwt');
+        // Redirigir al panel de admin
+        setTimeout(function() {
+          window.location.replace(${JSON.stringify(next)});
+        }, 500);
+      } catch (e) {
+        document.querySelector('.message').innerHTML = 
+          '<h2>Error</h2><p>No se pudo guardar el token: ' + e.message + '</p>';
+      }
+    })();
+  </script>
+</body>
 </html>`;
   },
 };

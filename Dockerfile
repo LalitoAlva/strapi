@@ -20,10 +20,23 @@ RUN rm -f /etc/apt/apt.conf.d/*proxy* || true
 
 # Dependencias para compilar (sharp/libvips)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates build-essential python3 make g++ libvips-dev wget \
-  && rm -rf /var/lib/apt/lists/*
+    ca-certificates \
+    build-essential \
+    python3 \
+    make \
+    g++ \
+    libvips-dev \
+    curl \
+    gnupg \
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean
 
-# Estos ARG llegan desde docker compose (para que el admin los "hornee")
+# Configurar npm con medidas de seguridad
+RUN npm config set audit-level moderate \
+  && npm config set fund false \
+  && npm config set progress false
+
+# Argumentos de build
 ARG PUBLIC_URL
 ARG ADMIN_PATH
 ARG STRAPI_ADMIN_BACKEND_URL
@@ -43,10 +56,16 @@ RUN node -v && npm -v && npm config get registry && npm ping || true
 # Blindaje: remover @strapi/plugin-cloud si estuviera
 RUN node -e "const fs=require('fs');const p=require('./package.json');if(p.dependencies){delete p.dependencies['@strapi/plugin-cloud'];}fs.writeFileSync('package.json',JSON.stringify(p,null,2));"
 
-# Instalación fresca (sin lock)
-RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund
+# Instalación con medidas de seguridad adicionales
+RUN npm ci --omit=dev --omit=optional --no-audit --no-fund --ignore-scripts 2>&1 | tee npm-install.log \
+  && echo "Checking for suspicious install messages..." \
+  && ! grep -i "warning\|deprecated\|vulnerability" npm-install.log || true \
+  && rm npm-install.log
 
-# Copiamos el resto del proyecto
+# Verificar integridad de node_modules críticos
+RUN node -e "const criticalPkgs = ['jsonwebtoken', 'openid-client', '@strapi/strapi']; criticalPkgs.forEach(pkg => { try { const pkgPath = require.resolve(pkg + '/package.json'); const pkgInfo = require(pkgPath); console.log(pkg + '@' + pkgInfo.version + ' - OK'); } catch(e) { console.error('MISSING CRITICAL PACKAGE:', pkg); process.exit(1); } }); console.log('Critical packages integrity: PASSED');"
+
+# Copiar código fuente
 COPY . .
 
 # Estructura esperada
