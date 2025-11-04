@@ -3,3 +3,4 @@ node_modules
 .DS_Store
 AZURE_AD_SETUP.md
 README.mdstrapi/strapi/AZURE_AD_SETUP.md
+AZURE_SSO_README.md
