@@ -4,3 +4,6 @@ node_modules
 AZURE_AD_SETUP.md
 README.mdstrapi/strapi/AZURE_AD_SETUP.md
 AZURE_SSO_README.md
+
+app/*.env
+app/.env

@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  strapi:
+    build: .
+    container_name: strapi-oauth
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_CLIENT: sqlite
+      DATABASE_FILENAME: .tmp/data.db
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      APP_KEYS: ${APP_KEYS}
+      API_TOKEN_SALT: ${API_TOKEN_SALT}
+      # Azure AD Config
+      AZURE_AD_CLIENT_ID: ${AZURE_AD_CLIENT_ID}
+      AZURE_AD_CLIENT_SECRET: ${AZURE_AD_CLIENT_SECRET}
+      AZURE_AD_TENANT_ID: ${AZURE_AD_TENANT_ID}
+      PUBLIC_URL: https://vlverappd00574.pemex.pmx.com/strapi
+    ports:
+      - "1337:1337"
+    volumes:
+      - ./data:/app/.tmp
+      - ./uploads:/app/public/uploads
+      - ./config:/app/config
+      - ./src:/app/src

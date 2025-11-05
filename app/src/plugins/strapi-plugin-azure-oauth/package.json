@@ -1,0 +1,10 @@
+{
+  "name": "strapi-plugin-azure-oauth",
+  "version": "1.0.0",
+  "description": "Azure AD OAuth for Strapi Admin",
+  "strapi": {
+    "name": "azure-oauth",
+    "kind": "plugin",
+    "displayName": "Azure OAuth"
+  }
+}
