@@ -7,3 +7,5 @@ AZURE_SSO_README.md
 
 app/*.env
 app/.env
+
+app/.env copy
