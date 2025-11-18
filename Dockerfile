@@ -3,7 +3,10 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Instalar dependencias del sistema
-RUN apk add --no-cache \
+# Desactivar verificación SSL para redes corporativas
+RUN apk --no-cache --allow-untrusted add ca-certificates && \
+    apk update --no-cache && \
+    apk add --no-cache \
     build-base \
     gcc \
     autoconf \
