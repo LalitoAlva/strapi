@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   strapi:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.debian
     container_name: strapi-oauth
     restart: unless-stopped
     environment:
