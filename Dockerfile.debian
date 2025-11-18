@@ -1,0 +1,32 @@
+FROM node:18-slim
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    autoconf \
+    automake \
+    zlib1g-dev \
+    libpng-dev \
+    libvips-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar package files
+COPY app/package*.json ./
+
+# Instalar dependencias
+RUN npm ci --only=production
+
+# Copiar el resto del código
+COPY app/ .
+
+# Build Strapi
+ENV NODE_ENV=production
+RUN npm run build
+
+EXPOSE 1337
+
+CMD ["npm", "start"]
