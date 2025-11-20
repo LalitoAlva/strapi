@@ -13,10 +13,15 @@ export default {
     const tenantID = process.env.AZURE_TENANT_ID;
     const publicUrl = process.env.PUBLIC_URL || 'http://localhost:1337';
 
+    console.log('🔍 DEBUG - Todas las variables de entorno con AZURE:');
+    Object.keys(process.env).filter(key => key.includes('AZURE')).forEach(key => {
+      console.log(`  ${key}: ${process.env[key]?.substring(0, 10)}...`);
+    });
+
     console.log('📋 Variables:', {
-      clientID: clientID ? 'OK' : 'MISSING',
-      clientSecret: clientSecret ? 'OK' : 'MISSING',
-      tenantID: tenantID ? 'OK' : 'MISSING',
+      clientID: clientID || 'MISSING',
+      clientSecret: clientSecret || 'MISSING',
+      tenantID: tenantID || 'MISSING',
       publicUrl,
     });
 
