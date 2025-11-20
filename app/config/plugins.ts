@@ -1,3 +1,6 @@
 export default ({ env }) => ({
-  // Los plugins en src/plugins/ se cargan automáticamente
+  'azure-oauth': {
+    enabled: true,
+    resolve: './src/plugins/strapi-plugin-azure-oauth'
+  },
 });
