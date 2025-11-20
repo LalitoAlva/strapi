@@ -1,6 +1,3 @@
 export default ({ env }) => ({
-  'azure-oauth': {
-    enabled: true,
-    resolve: './src/plugins/strapi-plugin-azure-oauth'
-  },
+  // Azure OAuth se configura directamente en src/index.ts
 });
